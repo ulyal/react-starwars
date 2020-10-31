@@ -3,6 +3,36 @@ import styles from "../css_modules/contact.module.css";
 
 class Contact extends React.Component {
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            isLoading: true
+        }
+    }
+
+    componentDidMount() {
+        const dateNow = Date.now();
+        if (this.state.isLoading) {
+            const planetsStr = localStorage.getItem('planets');
+            if (planetsStr) {
+                const planets = JSON.parse(planetsStr);
+                if (dateNow - planets.date < 30 * 86400 * 1000) {
+                    planets.isLoading = false;
+                    this.setState(planets);
+                    return;
+                }
+            }
+        }
+
+        fetch('https://sw-info-api.herokuapp.com/v1/planets')
+            .then(response => response.json())
+            .then(data => {
+                const names = data.map(planet => planet.name);
+                localStorage.setItem('planets', JSON.stringify({date: dateNow, names}));
+                this.setState({ isLoading: false, names})
+                })
+    }
+
     render() {
         return (
             <div className={styles.container}>
@@ -14,11 +44,10 @@ class Contact extends React.Component {
                     <label htmlFor="lname">Last Name</label>
                     <input type="text" id="lname" name="lastname" placeholder="Your last name.."/>
 
-                    <label htmlFor="country">Country</label>
-                    <select id="country" name="country">
-                        <option value="australia">Australia</option>
-                        <option value="canada">Canada</option>
-                        <option value="usa">USA</option>
+                    <label htmlFor="planet">Planet</label>
+                    <select id="planet" name="planet">
+                        {this.state.isLoading ? null :
+                            this.state.names.map(name => <option value="{name}">{name}</option>)}
                     </select>
 
                     <label htmlFor="subject">Subject</label>
